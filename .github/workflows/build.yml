@@ -21,17 +21,20 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x android/gradlew
-
-      - name: Build Debug APK
+      - name: Find project and build APK
         run: |
-          cd android
+          # Автоматически находим, где лежит gradlew (в корне или внутри v56work)
+          GRADLEW_PATH=$(find . -name "gradlew" -print -quit)
+          PROJECT_DIR=$(dirname "$GRADLEW_PATH")
+          
+          echo "Найден проект в директории: $PROJECT_DIR"
+          cd "$PROJECT_DIR"
+          
+          chmod +x gradlew
           ./gradlew assembleDebug
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
-          
+          path: '**/app/build/outputs/apk/debug/app-debug.apk'
