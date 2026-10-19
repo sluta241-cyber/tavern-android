@@ -18,21 +18,27 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Find project and build APK
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Build APK with Gradle
         run: |
-          GRADLEW_PATH=$(find . -name "gradlew" -print -quit)
-          if [ -z "$GRADLEW_PATH" ]; then
-            echo "Файл gradlew не найден в репозитории!"
+          # Ищем папку, где лежит build.gradle.kts или build.gradle
+          BUILD_FILE=$(find . -name "build.gradle.kts" -o -name "build.gradle" | head -n 1)
+          if [ -z "$BUILD_FILE" ]; then
+            echo "Файлы проекта Android не найдены!"
             exit 1
           fi
-          PROJECT_DIR=$(dirname "$GRADLEW_PATH")
-          echo "Найден проект в директории: $PROJECT_DIR"
+          
+          PROJECT_DIR=$(dirname "$BUILD_FILE")
+          echo "Переходим в папку проекта: $PROJECT_DIR"
           cd "$PROJECT_DIR"
-          chmod +x gradlew
-          ./gradlew assembleDebug
+          
+          # Запускаем сборку через системный gradle
+          gradle assembleDebug
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-debug-apk
-          path: '**/app/build/outputs/apk/debug/app-debug.apk'
+          path: '**/app/build/outputs/apk/debug/*.apk'
