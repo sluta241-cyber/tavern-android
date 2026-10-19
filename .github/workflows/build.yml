@@ -18,27 +18,38 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-
-      - name: Build APK with Gradle
+      - name: Extract ZIP and Build
         run: |
-          # Ищем папку, где лежит build.gradle.kts или build.gradle
-          BUILD_FILE=$(find . -name "build.gradle.kts" -o -name "build.gradle" | head -n 1)
-          if [ -z "$BUILD_FILE" ]; then
-            echo "Файлы проекта Android не найдены!"
+          # Находим любой zip-архив в репозитории и распаковываем его
+          ZIP_FILE=$(find . -name "*.zip" | head -n 1)
+          if [ -n "$ZIP_FILE" ]; then
+            echo "Найден архив: $ZIP_FILE, распаковываем..."
+            unzip -q "$ZIP_FILE" -d extracted_project
+            cd extracted_project
+          fi
+
+          # Ищем папку с gradle проектом внутри
+          BUILD_DIR=$(find . -name "build.gradle.kts" -o -name "build.gradle" -maxdepth 3 | head -n 1 | xargs dirname)
+          
+          if [ -z "$BUILD_DIR" ]; then
+            echo "Ошибка: файлы сборки Android не найдены даже после распаковки!"
             exit 1
           fi
           
-          PROJECT_DIR=$(dirname "$BUILD_FILE")
-          echo "Переходим в папку проекта: $PROJECT_DIR"
-          cd "$PROJECT_DIR"
+          echo "Проект найден в директории: $BUILD_DIR"
+          cd "$BUILD_DIR"
           
-          # Запускаем сборку через системный gradle
-          gradle assembleDebug
+          # Запускаем сборку через Gradle Wrapper, если он есть, иначе через gradle
+          if [ -f "./gradlew" ]; then
+            chmod +x gradlew
+            ./gradlew assembleDebug
+          else
+            gradle assembleDebug
+          fi
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-debug-apk
           path: '**/app/build/outputs/apk/debug/*.apk'
+
