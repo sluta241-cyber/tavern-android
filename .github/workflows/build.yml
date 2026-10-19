@@ -18,12 +18,9 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: Find project and build APK
         run: |
-          # Автоматически находим, где лежит gradlew (в корне или внутри v56work)
+          # Автоматически находим, где лежит gradlew
           GRADLEW_PATH=$(find . -name "gradlew" -print -quit)
           PROJECT_DIR=$(dirname "$GRADLEW_PATH")
           
