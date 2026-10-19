@@ -20,13 +20,14 @@ jobs:
 
       - name: Find project and build APK
         run: |
-          # Автоматически находим, где лежит gradlew
           GRADLEW_PATH=$(find . -name "gradlew" -print -quit)
+          if [ -z "$GRADLEW_PATH" ]; then
+            echo "Файл gradlew не найден в репозитории!"
+            exit 1
+          fi
           PROJECT_DIR=$(dirname "$GRADLEW_PATH")
-          
           echo "Найден проект в директории: $PROJECT_DIR"
           cd "$PROJECT_DIR"
-          
           chmod +x gradlew
           ./gradlew assembleDebug
 
